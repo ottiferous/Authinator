@@ -1,0 +1,8 @@
+
+*.json
+
+*.conf
+
+duo_client_python/
+
+venv/
