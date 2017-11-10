@@ -99,12 +99,12 @@ def auth_with(uname, device, option='0'):
     else:
         print("Authenticating with " + device['capabilities'][option])
         try:
-            auth_api.auth(
+            response = auth_api.auth(
                 username = uname,
                 device = device['device'],
                 factor = device['capabilities'][option]
             )
-            print("Success!")
+            print(response['status_msg'])
         except Exception as e:
             print("Ooops! Something went wrong.")
             print("Error: " + str(e))
@@ -119,22 +119,22 @@ def auth_with_passcode(uname, device):
                 factor='passcode',
                 passcode=state
             )
-            print("Success!")
+            print(response['status_msg'])
             state = 'q'
         except Exception as e:
             print(e)
             if state != 'q':
                 print("\n that is not a valid passcode.")
-
-
-# Begin to perform authentication
-auth_api.ping()
-# choose the username
-(uname, auth_options) = select_user()
-# go through device and method workflow
-(device, option) = select_device_and_auth_method(auth_options)
-# begin auth calls now that we know the user, device, and auth method
-auth_with(uname,device,option)
-
-# program termination
-#exit()
+try:
+    while( True ):
+        # Begin to perform authentication
+        auth_api.ping()
+        # choose the username
+        (uname, auth_options) = select_user()
+        # go through device and method workflow
+        (device, option) = select_device_and_auth_method(auth_options)
+        # begin auth calls now that we know the user, device, and auth method
+        auth_with(uname,device,option)
+except KeyboardInterrupt:
+    print("Exiting Program...")
+    pass
