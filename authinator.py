@@ -32,46 +32,81 @@ auth_api = duo_client.Auth(
     host=duo_keys['host'],
 )
 
+# perform a preauth call on a username
+def select_user():
+    response = ''
+    while response != 'q':
+        try:
+            response = input("Type the user's name in Duo: ")
+            devices = auth_api.preauth(username=response)
+            return (response, devices)
+        except:
+            if response != 'q':
+                print("\nUsername \"" + response + "\" was not found.")
+
+# allows selction of authentication devices available
+# displays the auth methods for that device
+def select_device_and_auth_method(json):
+    # shows all auth devices for a given user
+    display_all_auth_devices(json)
+    try:
+        response = int(input("Authenticate with device # "))
+        device = json['devices'][response]
+        # show device capabitlies for specified device
+        display_device_capabilities(device)
+        response = int(input("Authenticate with method # "))
+    except:
+        print("\"" + str(response) + "\" is not a valid option.")
+
+    # return tuple of deviceID and auth method chosen
+    return (device, response)
+
 # method to cleanly display auth methods available for a username
-# expects JSON['devices']
-def display_auth_devices(devices):
+# expects JSON from preauth
+def display_all_auth_devices(json):
     x = 0
-    for _ in devices:
+    for _ in json['devices']:
         if 'display_name' in _:
             print(str(x) + ". " + _['display_name'])
         else:
             print(str(x) + ". " + _['type'] + " " + _['name'])
         x += 1
-    return true
+    return True
 
-def display_device_capabiltiies(device):
+# displays the 'capabilities' of a device
+def display_device_capabilities(device):
     x = 0
-    for _ in device['capabilities']:
-        print(str(x) + ". " + _)
-        x += 1
-    return true
+    if device['capabilities']:
+        for _ in device['capabilities']:
+            print(str(x) + ". " + _)
+            x += 1
+    else:
+        print("0. Passcode")
+    return True
 
-def select_auth_method(uname, devices):
-    try:
-        response = int(input("Authenticate with device # "))
-        display_device_capabiltiies(devices[response])
-    except:
-        print("That is not a valid option.")
+# main wrapper for authentication
+# tries to authenticate a user with the given parameters from previous
+# calls. Will call helper method to perform actual API.auth() call
+def auth_with(uname, device, option='0'):
 
-def auth_with_push(uname, device):
-    try:
-        print("Sending push to device...")
-        auth_api.auth(
-            username=uname,
-            device=device,
-            factor="push",
-            type="Identification",
-            display_username="Help Desk"
-        )
-        print("Success!")
-    except Exception as e:
-        print("Ooops! Something went wrong.")
-        print("Error: " + e)
+    # if 'capabilties' does not exists we are using a token
+    if 'capabilities' not in device.keys():
+        auth_with_passcode(uname,device['device'])
+    # otherwise we need to select the correct option
+    else:
+        print("Authenticating with " + device['capabilities'][option])
+        try:
+            auth_api.auth(
+                username = uname,
+                device = device['device'],
+                factor = device['capabilities'][option],
+                type="Identification",
+                display_username="Help Desk"
+            )
+            print("Success!")
+        except Exception as e:
+            print("Ooops! Something went wrong.")
+            print("Error: " + str(e))
 
 def auth_with_passcode(uname, device):
     state = ''
@@ -90,37 +125,15 @@ def auth_with_passcode(uname, device):
             if state != 'q':
                 print("\n that is not a valid passcode.")
 
-def select_user():
-    response = ''
-    while response != 'q':
-        try:
-            response = input("Type the user's name in Duo: ")
-            devices = auth_api.preauth(username=state)
-            return (response, devices)
-        except:
-            if response != 'q':
-                print("\n Username \"" + response + "\" was not found.")
 
-
-
-# magical triplet to perform an authentication
+# Begin to perform authentication
 auth_api.ping()
+# choose the username
 (uname, auth_options) = select_user()
-options = display_auth_options(auth_options['devices'])
-#select_auth_method(uname, options)
-#auth_with_passcode(uname, "DPDMY4LY3MSY87B6UZ6")
+# go through device and method workflow
+(device, option) = select_device_and_auth_method(auth_options)
+# begin auth calls now that we know the user, device, and auth method
+auth_with(uname,device,option)
 
 # program termination
 #exit()
-
-# Please use your valid telephone number with country code, area
-# code, and 7 digit number. For example: PHONE = '+1-313-555-5555'
-#PHONE_NUMBER = get_next_arg('phone number ("+1-313-555-5555"): ')
-
-#(pin, txid) = verify_api.call(phone=PHONE_NUMBER)
-#print('Sent PIN: %s' % pin)
-#state = ''
-#while state != 'ended':
-    #status_res = verify_api.status(txid=txid)
-    #print(status_res['event'], 'event:', status_res['info'])
-    #state = status_res['state']
