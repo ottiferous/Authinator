@@ -95,6 +95,19 @@ def auth_with(uname, device, option='0'):
     # unless its a mobile OTP becuase reasons
     elif device['capabilities'][option] == 'mobile_otp':
         auth_with_passcode(uname,device['device'])
+    elif device['capabilities'][option] == 'sms':
+        print("Authenticating with " + device['capabilities'][option])
+        try:
+            response = auth_api.auth(
+                username = uname,
+                device = device['device'],
+                factor = device['capabilities'][option]
+            )
+            print(response['status_msg'])
+        except Exception as e:
+            print("Ooops! Something went wrong.")
+            print("Error: " + str(e))
+        auth_with_passcode(uname,device['device'])
     # otherwise we need to select the correct option
     else:
         print("Authenticating with " + device['capabilities'][option])
@@ -113,8 +126,8 @@ def auth_with_passcode(uname, device):
     state = ''
     while state != 'q':
         try:
-            state = input("6-digit code: ")
-            auth_api.auth(
+            state = input("Numerical code: ")
+            response = auth_api.auth(
                 username=uname,
                 factor='passcode',
                 passcode=state
@@ -136,5 +149,5 @@ try:
         # begin auth calls now that we know the user, device, and auth method
         auth_with(uname,device,option)
 except KeyboardInterrupt:
-    print("Exiting Program...")
+    print("\nExiting Program...")
     pass
