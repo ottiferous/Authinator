@@ -92,6 +92,9 @@ def auth_with(uname, device, option='0'):
     # if 'capabilties' does not exists we are using a token
     if 'capabilities' not in device.keys():
         auth_with_passcode(uname,device['device'])
+    # unless its a mobile OTP becuase reasons
+    elif device['capabilities'][option] == 'mobile_otp':
+        auth_with_passcode(uname,device['device'])
     # otherwise we need to select the correct option
     else:
         print("Authenticating with " + device['capabilities'][option])
@@ -99,9 +102,7 @@ def auth_with(uname, device, option='0'):
             auth_api.auth(
                 username = uname,
                 device = device['device'],
-                factor = device['capabilities'][option],
-                type="Identification",
-                display_username="Help Desk"
+                factor = device['capabilities'][option]
             )
             print("Success!")
         except Exception as e:
@@ -115,7 +116,7 @@ def auth_with_passcode(uname, device):
             state = input("6-digit code: ")
             auth_api.auth(
                 username=uname,
-                factor="passcode",
+                factor='passcode',
                 passcode=state
             )
             print("Success!")
