@@ -4,12 +4,21 @@ from __future__ import print_function
 import sys
 import ConfigParser
 
+#As of 10/05/18 - Python 3.7 currently yields ERROR: ...AppData\Local\Programs\Python\Python37\lib\site-packages\duo_client\auth.py", line 115
+#async=False,
+#    ^
+#SyntaxError: invalid syntax
+
+#Python 3.5.4 works
+
+#the current duo_client is found at https://github.com/duosecurity/duo_client_python
 import duo_client
 from six.moves import input
 
 # config parser
 def grab_keys(filename='duo.conf'):
-    config = ConfigParser.RawConfigParser()
+    #ConfigParser is now 'configparser'
+    config = configparser.RawConfigParser()
     config.read(filename)
 
     ikey = config.get('duo', 'ikey')
@@ -21,11 +30,13 @@ duo_keys = grab_keys()
 # You can find this information in the integrations section
 # where you signed up for Duo.
 # instantiate an Auth instance
-verify_api = duo_client.Verify(
-    ikey=duo_keys['ikey'],
-    skey=duo_keys['skey'],
-    host=duo_keys['host'],
-)
+
+#duo_client.Verify is now depricated
+#verify_api = duo_client.Verify(
+#    ikey=duo_keys['ikey'],
+#    skey=duo_keys['skey'],
+#    host=duo_keys['host'],
+#)
 auth_api = duo_client.Auth(
     ikey=duo_keys['ikey'],
     skey=duo_keys['skey'],
